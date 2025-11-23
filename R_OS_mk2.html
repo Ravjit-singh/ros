@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>macOS Web Desktop</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary-color:#1337ec;
+  --background-dark:#101322;
+  --window-radius:16px;
+  --window-header-height:36px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Inter',sans-serif;
+  overflow:hidden;
+  background-color:var(--background-dark);
+}
+
+/* --- Wallpaper --- */
+#wallpaper{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  background-image:url('https://lh3.googleusercontent.com/aida-public/AB6AXuAFmj6AS4qPvPVJutz-o8FeaqyPIAxZooJ5cjvsqAAxvb2i1QhLqH0qjZNkEffQ6VIRaUSMQfP4L3y-e1xC2fPBTzZq02OtZm5lH9btS3kbhn8ma_nHw9bITMS6D2PS5271-Q0Ok1-FZi3Uv5t5Ieuu2mu-CaL8HQMy9nFdUtZGRgcy5XMyloZoTk0MH7r5t36wFGNlmf2ZIMDbukQen54r9xb4pivoVYDs31_SYaFjKiKPvt3WBjnTHUHSpUDV_GNWXMzQFJU4ZTZF');
+  background-size:cover;
+  background-position:center;
+  z-index:0;
+  filter:brightness(1.1);
+}
+
+/* --- Desktop Icons --- */
+#desktop-icons{
+  position:absolute;
+  top:20px;
+  left:20px;
+  display:grid;
+  grid-auto-rows:fit-content;
+  gap:24px;
+  z-index:10;
+}
+.desktop-icon{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  cursor:pointer;
+  transition:transform 0.25s ease, filter 0.25s ease;
+}
+.desktop-icon img{
+  width:72px;
+  height:72px;
+  border-radius:16px;
+  box-shadow:0 6px 15px rgba(0,0,0,0.3);
+}
+.desktop-icon span{
+  color:white;
+  margin-top:6px;
+  font-size:0.85rem;
+  text-align:center;
+  text-shadow:0 1px 3px rgba(0,0,0,0.7);
+  user-select:none;
+}
+.desktop-icon:hover{
+  transform:translateY(-6px) scale(1.15);
+  filter:brightness(1.2);
+}
+
+/* --- Dock --- */
+#dock{
+  position:absolute;
+  bottom:24px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:16px;
+  padding:12px 24px;
+  background:rgba(255,255,255,0.15);
+  border-radius:24px;
+  backdrop-filter:blur(20px) saturate(180%);
+  border:1px solid rgba(255,255,255,0.2);
+  box-shadow:0 10px 40px rgba(0,0,0,0.35);
+  z-index:20;
+  transition:all 0.3s ease;
+}
+.dock-icon{
+  cursor:pointer;
+  transition:transform 0.25s ease, filter 0.25s ease;
+}
+.dock-icon img{
+  width:56px;
+  height:56px;
+  border-radius:16px;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+.dock-icon:hover{
+  transform:scale(1.4) translateY(-8px);
+  filter:drop-shadow(0 6px 20px rgba(0,0,0,0.5));
+}
+
+/* --- Window Styling --- */
+.window{
+  position:absolute;
+  width:640px;
+  height:440px;
+  background:rgba(255,255,255,0.85);
+  border-radius:var(--window-radius);
+  box-shadow:0 12px 32px rgba(0,0,0,0.4);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  backdrop-filter:blur(16px) saturate(180%);
+  border:1px solid rgba(255,255,255,0.3);
+  opacity:0;
+  transform:translateY(30px) scale(0.95);
+  animation:openWindow 0.35s forwards;
+  z-index:50;
+  transition:all 0.25s ease;
+}
+@keyframes openWindow{
+  to{opacity:1; transform:translateY(0) scale(1);}
+}
+@keyframes closeWindow{
+  to{opacity:0; transform:translateY(20px) scale(0.9);}
+}
+
+.window-header{
+  display:flex;
+  align-items:center;
+  height:var(--window-header-height);
+  padding:0 12px;
+  background:rgba(240,240,240,0.85);
+  cursor:grab;
+  user-select:none;
+  backdrop-filter:blur(8px);
+}
+.window-header .buttons{
+  display:flex;
+  gap:6px;
+}
+.window-header .buttons span{
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:bold;
+  color:white;
+  cursor:pointer;
+  transition:transform 0.2s ease;
+}
+.window-header .buttons .close{background:#ff5f57;}
+.window-header .buttons .minimize{background:#febc2e;}
+.window-header .buttons .maximize{background:#28c840;}
+.window-header .buttons span:hover{transform:scale(1.3);}
+.window-header .title{
+  margin-left:12px;
+  font-weight:600;
+  font-size:0.95rem;
+  user-select:none;
+}
+
+.window-content{
+  flex:1;
+  overflow:hidden;
+}
+.window-content iframe{
+  width:100%;
+  height:100%;
+  border:none;
+}
+
+/* --- Active Window Shadow --- */
+.window.active{
+  box-shadow:0 20px 50px rgba(0,0,0,0.6);
+  transform:scale(1.01);
+}
+</style>
+</head>
+<body>
+<!-- Wallpaper -->
+<div id="wallpaper"></div>
+
+<!-- Desktop Icons -->
+<div id="desktop-icons">
+  <div class="desktop-icon" data-app="r-music"><img src="https://via.placeholder.com/72/1337ec/fff?text=R"><span>R Music</span></div>
+  <div class="desktop-icon" data-app="r-studio"><img src="https://via.placeholder.com/72/f39c12/fff?text=S"><span>R Studio</span></div>
+  <div class="desktop-icon" data-app="r-expense"><img src="https://via.placeholder.com/72/2ecc71/fff?text=E"><span>R Expense</span></div>
+  <div class="desktop-icon" data-app="pwa-generator"><img src="https://via.placeholder.com/72/9b59b6/fff?text=P"><span>PWA Generator</span></div>
+  <div class="desktop-icon" data-app="file-reducer"><img src="https://via.placeholder.com/72/e74c3c/fff?text=F"><span>File Reducer</span></div>
+  <div class="desktop-icon" data-app="exam-vault"><img src="https://via.placeholder.com/72/34495e/fff?text=X"><span>Exam Vault</span></div>
+  <div class="desktop-icon" data-app="service-linkup"><img src="https://via.placeholder.com/72/1abc9c/fff?text=S"><span>Service Linkup</span></div>
+  <div class="desktop-icon" data-app="echoverse"><img src="https://via.placeholder.com/72/8e44ad/fff?text=E"><span>Echoverse</span></div>
+</div>
+
+<!-- Dock -->
+<div id="dock">
+  <div class="dock-icon" data-app="r-music"><img src="https://via.placeholder.com/56/1337ec/fff?text=R"></div>
+  <div class="dock-icon" data-app="r-studio"><img src="https://via.placeholder.com/56/f39c12/fff?text=S"></div>
+  <div class="dock-icon" data-app="r-expense"><img src="https://via.placeholder.com/56/2ecc71/fff?text=E"></div>
+  <div class="dock-icon" data-app="pwa-generator"><img src="https://via.placeholder.com/56/9b59b6/fff?text=P"></div>
+  <div class="dock-icon" data-app="file-reducer"><img src="https://via.placeholder.com/56/e74c3c/fff?text=F"></div>
+  <div class="dock-icon" data-app="exam-vault"><img src="https://via.placeholder.com/56/34495e/fff?text=X"></div>
+  <div class="dock-icon" data-app="service-linkup"><img src="https://via.placeholder.com/56/1abc9c/fff?text=S"></div>
+  <div class="dock-icon" data-app="echoverse"><img src="https://via.placeholder.com/56/8e44ad/fff?text=E"></div>
+</div>
+
+<!-- Windows Container -->
+<div id="windows-container"></div>
+
+<script>
+const appManifest={
+  "r-music":"<h1 style='text-align:center;margin-top:40px;'>R Music App</h1>",
+  "r-studio":"<h1 style='text-align:center;margin-top:40px;'>R Studio App</h1>",
+  "r-expense":"<h1 style='text-align:center;margin-top:40px;'>R Expense App</h1>",
+  "pwa-generator":"<h1 style='text-align:center;margin-top:40px;'>PWA Generator App</h1>",
+  "file-reducer":"<h1 style='text-align:center;margin-top:40px;'>File Reducer App</h1>",
+  "exam-vault":"<h1 style='text-align:center;margin-top:40px;'>Exam Vault App</h1>",
+  "service-linkup":"<h1 style='text-align:center;margin-top:40px;'>Service Linkup App</h1>",
+  "echoverse":"<h1 style='text-align:center;margin-top:40px;'>Echoverse App</h1>"
+};
+
+const windowsContainer=document.getElementById("windows-container");
+let highestZ=100;
+
+function openApp(appId){
+  if(!appManifest[appId]) return;
+  const content=appManifest[appId];
+
+  const win=document.createElement("div");
+  win.classList.add("window","active");
+  win.style.top="120px";
+  win.style.left="120px";
+  win.style.zIndex=++highestZ;
+  win.innerHTML=`
+    <div class="window-header">
+      <div class="buttons">
+        <span class="close">×</span>
+        <span class="minimize">–</span>
+        <span class="maximize">🗖</span>
+      </div>
+      <span class="title">${appId}</span>
+    </div>
+    <div class="window-content">${content}</div>
+  `;
+  windowsContainer.appendChild(win);
+  makeDraggable(win);
+  makeResizable(win);
+
+  win.querySelector(".close").onclick=()=>closeWindow(win);
+  win.querySelector(".maximize").onclick=()=>maximizeWindow(win);
+  win.querySelector(".minimize").onclick=()=>minimizeWindow(win);
+  win.addEventListener("mousedown",()=>setActiveWindow(win));
+}
+
+function setActiveWindow(win){
+  document.querySelectorAll(".window").forEach(w=>w.classList.remove("active"));
+  win.classList.add("active");
+  win.style.zIndex=++highestZ;
+}
+
+// --- Draggable by Header ---
+function makeDraggable(el){
+  const header=el.querySelector(".window-header");
+  let isDragging=false,offsetX=0,offsetY=0;
+  header.addEventListener("mousedown",(e)=>{
+    isDragging=true;
+    offsetX=e.clientX-el.offsetLeft;
+    offsetY=e.clientY-el.offsetTop;
+    setActiveWindow(el);
+  });
+  document.addEventListener("mousemove",(e)=>{
+    if(isDragging){
+      el.style.left=(e.clientX-offsetX)+"px";
+      el.style.top=(e.clientY-offsetY)+"px";
+    }
+  });
+  document.addEventListener("mouseup",()=>{isDragging=false;});
+}
+
+// --- Resizable ---
+function makeResizable(el){
+  el.style.resize="both";
+  el.style.overflow="auto";
+}
+
+// --- Maximize ---
+function maximizeWindow(win){
+  if(win.dataset.maximized==="true"){
+    win.style.width="640px";
+    win.style.height="440px";
+    win.style.top="120px";
+    win.style.left="120px";
+    win.dataset.maximized="false";
+  }else{
+    win.style.top="0px";
+    win.style.left="0px";
+    win.style.width=window.innerWidth+"px";
+    win.style.height=window.innerHeight+"px";
+    win.dataset.maximized="true";
+  }
+}
+
+// --- Minimize ---
+function minimizeWindow(win){
+  win.style.transform="scale(0) translateY(50px)";
+  win.style.opacity="0";
+  setTimeout(()=>{
+    win.style.transform="scale(1) translateY(0)";
+    win.style.opacity="1";
+  },200);
+}
+
+// --- Close with animation ---
+function closeWindow(win){
+  win.style.animation="closeWindow 0.25s forwards";
+  setTimeout(()=>win.remove(),250);
+}
+
+// Dock & Desktop click handlers
+document.querySelectorAll(".dock-icon, .desktop-icon").forEach(icon=>{
+  icon.addEventListener("click",()=>openApp(icon.dataset.app));
+});
+</script>
+</body>
+</html>

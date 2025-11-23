@@ -174,7 +174,6 @@ body{
   border:none;
 }
 
-/* --- Active Window Shadow --- */
 .window.active{
   box-shadow:0 20px 50px rgba(0,0,0,0.6);
   transform:scale(1.01);
@@ -187,51 +186,39 @@ body{
 
 <!-- Desktop Icons -->
 <div id="desktop-icons">
-  <div class="desktop-icon" data-app="r-music"><img src="https://via.placeholder.com/72/1337ec/fff?text=R"><span>R Music</span></div>
-  <div class="desktop-icon" data-app="r-studio"><img src="https://via.placeholder.com/72/f39c12/fff?text=S"><span>R Studio</span></div>
-  <div class="desktop-icon" data-app="r-expense"><img src="https://via.placeholder.com/72/2ecc71/fff?text=E"><span>R Expense</span></div>
-  <div class="desktop-icon" data-app="pwa-generator"><img src="https://via.placeholder.com/72/9b59b6/fff?text=P"><span>PWA Generator</span></div>
-  <div class="desktop-icon" data-app="file-reducer"><img src="https://via.placeholder.com/72/e74c3c/fff?text=F"><span>File Reducer</span></div>
-  <div class="desktop-icon" data-app="exam-vault"><img src="https://via.placeholder.com/72/34495e/fff?text=X"><span>Exam Vault</span></div>
-  <div class="desktop-icon" data-app="service-linkup"><img src="https://via.placeholder.com/72/1abc9c/fff?text=S"><span>Service Linkup</span></div>
-  <div class="desktop-icon" data-app="echoverse"><img src="https://via.placeholder.com/72/8e44ad/fff?text=E"><span>Echoverse</span></div>
+  <div class="desktop-icon" data-app="rmusic"><img src="icons/rmusic.png"><span>R Music</span></div>
+  <div class="desktop-icon" data-app="rstudio"><img src="icons/rstudio.png"><span>R Studio</span></div>
+  <div class="desktop-icon" data-app="rexpense"><img src="icons/rexpense.png"><span>R Expense</span></div>
+  <div class="desktop-icon" data-app="search"><img src="icons/search.png"><span>Search</span></div>
 </div>
 
 <!-- Dock -->
 <div id="dock">
-  <div class="dock-icon" data-app="rmusic"><img src="https://via.placeholder.com/56/1337ec/fff?text=R"></div>
-  <div class="dock-icon" data-app="rstudio"><img src="https://via.placeholder.com/56/f39c12/fff?text=S"></div>
-  <div class="dock-icon" data-app="rexpense"><img src="https://via.placeholder.com/56/2ecc71/fff?text=E"></div>
-  <div class="dock-icon" data-app="pwa-generator"><img src="https://via.placeholder.com/56/9b59b6/fff?text=P"></div>
-  <div class="dock-icon" data-app="file-reducer"><img src="https://via.placeholder.com/56/e74c3c/fff?text=F"></div>
-  <div class="dock-icon" data-app="exam-vault"><img src="https://via.placeholder.com/56/34495e/fff?text=X"></div>
-  <div class="dock-icon" data-app="service-linkup"><img src="https://via.placeholder.com/56/1abc9c/fff?text=S"></div>
-  <div class="dock-icon" data-app="echoverse"><img src="https://via.placeholder.com/56/8e44ad/fff?text=E"></div>
+  <div class="dock-icon" data-app="rmusic"><img src="icons/rmusic.png"></div>
+  <div class="dock-icon" data-app="rstudio"><img src="icons/rstudio.png"></div>
+  <div class="dock-icon" data-app="rexpense"><img src="icons/rexpense.png"></div>
+  <div class="dock-icon" data-app="search"><img src="icons/search.png"></div>
 </div>
 
 <!-- Windows Container -->
 <div id="windows-container"></div>
 
 <script>
-const appManifest={
-  "rmusic":"<h1 style='text-align:center;margin-top:40px;'>R Music App</h1>",
-  "rstudio":"<h1 style='text-align:center;margin-top:40px;'>R Studio App</h1>",
-  "rexpense":"<h1 style='text-align:center;margin-top:40px;'>R Expense App</h1>",
-  "pwa-generator":"<h1 style='text-align:center;margin-top:40px;'>PWA Generator App</h1>",
-  "file-reducer":"<h1 style='text-align:center;margin-top:40px;'>File Reducer App</h1>",
-  "exam-vault":"<h1 style='text-align:center;margin-top:40px;'>Exam Vault App</h1>",
-  "service-linkup":"<h1 style='text-align:center;margin-top:40px;'>Service Linkup App</h1>",
-  "echoverse":"<h1 style='text-align:center;margin-top:40px;'>Echoverse App</h1>"
+const appManifest = {
+  "rmusic": "rmusic.html",
+  "rstudio": "rstudio.html",
+  "rexpense": "rexpense.html",
+  "search": "search.html"
 };
 
-const windowsContainer=document.getElementById("windows-container");
-let highestZ=100;
+const windowsContainer = document.getElementById("windows-container");
+let highestZ = 100;
 
 function openApp(appId){
   if(!appManifest[appId]) return;
-  const content=appManifest[appId];
+  const appUrl = appManifest[appId];
 
-  const win=document.createElement("div");
+  const win = document.createElement("div");
   win.classList.add("window","active");
   win.style.top="120px";
   win.style.left="120px";
@@ -245,15 +232,17 @@ function openApp(appId){
       </div>
       <span class="title">${appId}</span>
     </div>
-    <div class="window-content">${content}</div>
+    <div class="window-content">
+      <iframe src="${appUrl}" frameborder="0"></iframe>
+    </div>
   `;
   windowsContainer.appendChild(win);
   makeDraggable(win);
   makeResizable(win);
 
-  win.querySelector(".close").onclick=()=>closeWindow(win);
-  win.querySelector(".maximize").onclick=()=>maximizeWindow(win);
-  win.querySelector(".minimize").onclick=()=>minimizeWindow(win);
+  win.querySelector(".close").onclick = ()=>closeWindow(win);
+  win.querySelector(".maximize").onclick = ()=>maximizeWindow(win);
+  win.querySelector(".minimize").onclick = ()=>minimizeWindow(win);
   win.addEventListener("mousedown",()=>setActiveWindow(win));
 }
 
@@ -263,10 +252,10 @@ function setActiveWindow(win){
   win.style.zIndex=++highestZ;
 }
 
-// --- Draggable by Header ---
+// Draggable only via header
 function makeDraggable(el){
   const header=el.querySelector(".window-header");
-  let isDragging=false,offsetX=0,offsetY=0;
+  let isDragging=false, offsetX=0, offsetY=0;
   header.addEventListener("mousedown",(e)=>{
     isDragging=true;
     offsetX=e.clientX-el.offsetLeft;
@@ -282,13 +271,13 @@ function makeDraggable(el){
   document.addEventListener("mouseup",()=>{isDragging=false;});
 }
 
-// --- Resizable ---
+// Resizable
 function makeResizable(el){
   el.style.resize="both";
   el.style.overflow="auto";
 }
 
-// --- Maximize ---
+// Maximize
 function maximizeWindow(win){
   if(win.dataset.maximized==="true"){
     win.style.width="640px";
@@ -305,7 +294,7 @@ function maximizeWindow(win){
   }
 }
 
-// --- Minimize ---
+// Minimize
 function minimizeWindow(win){
   win.style.transform="scale(0) translateY(50px)";
   win.style.opacity="0";
@@ -315,13 +304,13 @@ function minimizeWindow(win){
   },200);
 }
 
-// --- Close with animation ---
+// Close with animation
 function closeWindow(win){
   win.style.animation="closeWindow 0.25s forwards";
   setTimeout(()=>win.remove(),250);
 }
 
-// Dock & Desktop click handlers
+// Desktop/Dock click events
 document.querySelectorAll(".dock-icon, .desktop-icon").forEach(icon=>{
   icon.addEventListener("click",()=>openApp(icon.dataset.app));
 });

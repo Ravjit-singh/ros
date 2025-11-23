@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta name="theme-color" content="#000000">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>R Studio - Web Code Editor</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+
+<!-- CodeMirror -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/r/r.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/selection/active-line.min.js"></script>
+
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        accent: "#00F5D4",
+        primary: "#24ffda",
+        "background-dark": "#0A0A0A",
+        "panel-dark": "rgba(10, 25, 30, 0.6)",
+        "text-light": "#EAEAEA",
+        "text-muted": "#888888",
+      },
+      fontFamily: { display: ["Space Grotesk", "sans-serif"] },
+    },
+  },
+};
+</script>
+
+<style>
+.CodeMirror {
+  height: 100%;
+  width: 100%;
+  background-color: #0A0A0A !important;
+  color: #EAEAEA !important;
+  font-size: 0.9rem;
+  font-family: 'Space Grotesk', monospace;
+}
+.cm-s-aquastudio .CodeMirror-cursor {
+  border-left: 2px solid #00F5D4;
+}
+.cm-s-aquastudio .CodeMirror-activeline-background {
+  background: rgba(0, 245, 212, 0.07) !important;
+}
+.cm-s-aquastudio .CodeMirror-gutters {
+  background-color: #0A0A0A;
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+.cm-s-aquastudio .CodeMirror-linenumber {
+  color: #4B5563 !important;
+}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background-color:#00F5D4;border-radius:8px;border:2px solid #0A0A0A;}
+::-webkit-scrollbar-thumb:hover{background-color:#24ffda;}
+</style>
+</head>
+
+<body class="bg-background-dark font-display text-text-light relative min-h-screen overflow-hidden">
+<div class="absolute inset-0 z-0 overflow-hidden">
+  <div class="absolute -top-1/4 -left-1/4 h-1/2 w-1/2 rounded-full bg-accent/20 blur-3xl"></div>
+  <div class="absolute -bottom-1/4 -right-1/4 h-1/2 w-1/2 rounded-full bg-accent/30 blur-3xl"></div>
+</div>
+
+<div class="relative z-10 flex flex-col h-screen w-full">
+<header class="flex h-14 sm:h-16 items-center justify-between border-b border-white/10 bg-panel-dark px-4 sm:px-6 shadow-lg backdrop-blur-md">
+  <div class="flex flex-col">
+    <div class="flex items-baseline gap-3">
+      <h1 id="rstudio-title" class="text-xl sm:text-2xl font-extrabold tracking-tight text-accent cursor-pointer">R Studio</h1>
+      <span class="text-text-muted select-none">|</span>
+      <h2 id="project-title" class="text-lg sm:text-xl font-semibold tracking-tight text-text-light">Project: loading...</h2>
+    </div>
+    <p class="text-[11px] sm:text-xs text-text-muted font-light mt-0.5">By Ravjit Singh</p>
+  </div>
+  <button id="save-btn" class="hover:text-accent flex items-center gap-1 text-sm font-semibold">
+    <span class="material-symbols-outlined">save</span> Save
+  </button>
+</header>
+
+<div class="flex flex-1 overflow-hidden">
+  <aside class="w-64 shrink-0 flex-col border-r border-white/10 bg-panel-dark p-4 shadow-lg backdrop-blur-md relative">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between mb-4">
+      <input id="search-files" type="search" placeholder="Search files..."
+             class="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-text-light placeholder-text-muted focus:border-accent focus:bg-white/10 focus:outline-none"/>
+      <button id="new-file-btn" title="New File" class="ml-2 text-accent hover:text-primary">
+        <span class="material-symbols-outlined">add</span>
+      </button>
+    </div>
+
+    <nav id="file-list" class="flex flex-col gap-1"></nav>
+
+    <!-- Context Menu -->
+    <div id="context-menu" class="hidden absolute bg-panel-dark border border-white/10 rounded-md shadow-lg">
+      <button id="rename-btn" class="block w-full text-left px-4 py-2 hover:bg-accent/10 hover:text-accent text-sm">Rename</button>
+      <button id="delete-btn" class="block w-full text-left px-4 py-2 hover:bg-accent/10 hover:text-red-400 text-sm">Delete</button>
+    </div>
+  </aside>
+
+  <main class="flex flex-1 flex-col overflow-hidden">
+    <div id="tabs" class="border-b border-white/10 bg-panel-dark/50 backdrop-blur-sm">
+      <div class="flex gap-2 px-3 pt-2 overflow-x-auto"></div>
+    </div>
+    <div class="flex flex-1 md:flex-row flex-col overflow-hidden bg-background-dark/80">
+      <div class="flex-1 flex overflow-hidden p-3 sm:p-4">
+        <textarea id="code-editor"></textarea>
+      </div>
+      <div class="console h-60 md:h-auto md:w-1/3 flex flex-col border-t md:border-t-0 md:border-l border-white/10 bg-panel-dark shadow-lg backdrop-blur-md">
+        <div class="flex items-center justify-between border-b border-white/10 px-3 sm:px-4 py-2">
+          <h3 class="text-sm sm:text-base font-bold">Preview</h3>
+          <button id="clear-preview" class="text-xs sm:text-sm text-text-muted hover:text-accent">Clear</button>
+        </div>
+        <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin" class="flex-1 w-full"></iframe>
+      </div>
+    </div>
+  </main>
+</div>
+</div>
+
+<!-- Rename Modal -->
+<div id="rename-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+  <div class="bg-panel-dark border border-white/10 rounded-2xl p-6 w-80 shadow-2xl">
+    <h2 class="text-lg font-semibold mb-4 text-accent">Rename File</h2>
+    <input id="rename-input" type="text" class="w-full mb-4 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-text-light placeholder-text-muted focus:border-accent focus:bg-white/10 focus:outline-none" placeholder="New name..." />
+    <div class="flex justify-end gap-2">
+      <button id="cancel-rename" class="px-3 py-1.5 text-sm bg-white/10 rounded-lg hover:bg-white/20">Cancel</button>
+      <button id="confirm-rename" class="px-3 py-1.5 text-sm bg-accent/20 text-accent rounded-lg hover:bg-accent/30">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- New File Modal -->
+<div id="newfile-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+  <div class="bg-panel-dark border border-white/10 rounded-2xl p-6 w-80 shadow-2xl">
+    <h2 class="text-lg font-semibold mb-4 text-accent">Create New File</h2>
+    <input id="newfile-input" type="text" class="w-full mb-4 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-text-light placeholder-text-muted focus:border-accent focus:bg-white/10 focus:outline-none" placeholder="Enter file name..." />
+    <div class="flex justify-end gap-2">
+      <button id="cancel-newfile" class="px-3 py-1.5 text-sm bg-white/10 rounded-lg hover:bg-white/20">Cancel</button>
+      <button id="confirm-newfile" class="px-3 py-1.5 text-sm bg-accent/20 text-accent rounded-lg hover:bg-accent/30">Create</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const backendURL = "https://script.google.com/macros/s/AKfycbxledzNZPFP91QTS4a4z9394kQx7wZizNbs5VpOKnMa3HE2YK1r3HETvg1vuZt8m9SA/exec";
+const fileList=document.getElementById("file-list");
+const tabsContainer=document.querySelector("#tabs .flex");
+const projectName=localStorage.getItem("project");
+if(!projectName){alert("No project selected.");window.location.href="rstudio_login.html";}
+document.title=`Project: ${projectName}`;
+document.getElementById("project-title").textContent=`Project: ${projectName}`;
+
+const editor=CodeMirror.fromTextArea(document.getElementById("code-editor"),{mode:"r",lineNumbers:true,autoCloseBrackets:true,styleActiveLine:true,theme:"aquastudio"});
+let openFiles=[],activeFile="",contextTarget=null;
+
+async function loadFileList(){
+  const r=await fetch(`${backendURL}?action=listFiles&project=${encodeURIComponent(projectName)}`);
+  const files=await r.json();
+  fileList.innerHTML="";
+  files.forEach(f=>{
+    const btn=document.createElement("button");
+    btn.dataset.file=f;
+    btn.className="file-item flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent/10 hover:text-accent";
+    btn.innerHTML=`<span class='flex items-center gap-2 truncate'><span class='material-symbols-outlined text-base'>description</span>${f}</span><span class='material-symbols-outlined text-xs text-text-muted hover:text-accent cursor-pointer'>more_vert</span>`;
+    fileList.appendChild(btn);
+  });
+}
+async function fetchFile(f){const r=await fetch(`${backendURL}?action=getFile&path=${encodeURIComponent(f)}&project=${encodeURIComponent(projectName)}`);const d=await r.json();return atob(d.content);}
+async function saveFile(f,c){
+  const btn=document.getElementById("save-btn");
+  btn.disabled=true;btn.innerHTML=`<span class="material-symbols-outlined">sync</span> Saving...`;btn.classList.add("bg-blue-600","text-white","px-3","rounded-md");
+  try{
+    await fetch(backendURL,{method:"POST",body:JSON.stringify({path:f,newContent:c,project:projectName})});
+    btn.innerHTML=`<span class="material-symbols-outlined">check_circle</span> Saved`;btn.classList.remove("bg-blue-600");btn.classList.add("bg-green-600");
+    setTimeout(()=>{btn.disabled=false;btn.innerHTML=`<span class="material-symbols-outlined">save</span> Save`;btn.classList.remove("bg-green-600","text-white","px-3","rounded-md");},3000);
+  }catch(e){btn.innerHTML=`<span class="material-symbols-outlined">error</span> Error`;btn.classList.add("bg-red-600");setTimeout(()=>{btn.innerHTML=`<span class="material-symbols-outlined">save</span> Save`;btn.classList.remove("bg-red-600","text-white");},3000);}
+}
+async function openFile(f){
+  if(!openFiles.includes(f)){openFiles.push(f);
+    const tab=document.createElement("a");
+    tab.href="#";tab.dataset.file=f;tab.className="tab flex items-center gap-2 border-b-2 border-transparent px-3 py-2 text-sm text-text-muted hover:border-accent/50 hover:text-text-light";
+    tab.innerHTML=`${f}<span class='material-symbols-outlined text-base cursor-pointer'>close</span>`;
+    tabsContainer.appendChild(tab);
+  }
+  activeFile=f;editor.setValue(await fetchFile(f));editor.refresh();updateTabs();
+}
+function updateTabs(){document.querySelectorAll("#tabs .tab").forEach(t=>{const a=t.dataset.file===activeFile;t.classList.toggle("text-accent",a);t.classList.toggle("border-accent",a);});}
+function updatePreview(){const f=document.getElementById("preview-frame");const d=f.contentDocument||f.contentWindow.document;d.open();d.write(editor.getValue());d.close();}
+editor.on("change",updatePreview);
+document.getElementById("save-btn").addEventListener("click",()=>{if(activeFile)saveFile(activeFile,editor.getValue());});
+
+// ----- Context Menu -----
+const ctx=document.getElementById("context-menu");
+fileList.addEventListener("click",e=>{
+  if(e.target.textContent==="more_vert"){contextTarget=e.target.closest(".file-item");const r=contextTarget.getBoundingClientRect();ctx.style.top=r.top+"px";ctx.style.left=r.right-100+"px";ctx.classList.remove("hidden");e.stopPropagation();}
+  else{const b=e.target.closest(".file-item");if(b)openFile(b.dataset.file);}
+});
+document.addEventListener("click",()=>ctx.classList.add("hidden"));
+document.getElementById("delete-btn").addEventListener("click",async()=>{ctx.classList.add("hidden");if(confirm(`Delete ${contextTarget.dataset.file}?`)){await fetch(`${backendURL}?action=deleteFile&path=${encodeURIComponent(contextTarget.dataset.file)}&project=${encodeURIComponent(projectName)}`);loadFileList();}});
+document.getElementById("rename-btn").addEventListener("click",()=>{ctx.classList.add("hidden");document.getElementById("rename-modal").classList.add("flex");document.getElementById("rename-modal").classList.remove("hidden");document.getElementById("rename-input").value=contextTarget.dataset.file;});
+document.getElementById("cancel-rename").addEventListener("click",()=>document.getElementById("rename-modal").classList.add("hidden"));
+document.getElementById("confirm-rename").addEventListener("click",async()=>{const newName=document.getElementById("rename-input").value.trim();if(!newName)return;await fetch(`${backendURL}?action=renameFile&oldPath=${encodeURIComponent(contextTarget.dataset.file)}&newPath=${encodeURIComponent(newName)}&project=${encodeURIComponent(projectName)}`);document.getElementById("rename-modal").classList.add("hidden");loadFileList();});
+
+// ----- New File Modal -----
+document.getElementById("new-file-btn").addEventListener("click",()=>{document.getElementById("newfile-modal").classList.remove("hidden");document.getElementById("newfile-modal").classList.add("flex");});
+document.getElementById("cancel-newfile").addEventListener("click",()=>document.getElementById("newfile-modal").classList.add("hidden"));
+document.getElementById("confirm-newfile").addEventListener("click",async()=>{const name=document.getElementById("newfile-input").value.trim();if(!name)return;await fetch(`${backendURL}?action=createFile&name=${encodeURIComponent(name)}&project=${encodeURIComponent(projectName)}`);document.getElementById("newfile-modal").classList.add("hidden");loadFileList();});
+
+loadFileList();
+</script>
+</body>
+</html>>.target.textContent==="more_vert"){contextTarget=e.target.closest(".file-item");const r=contextTarget.getBoundingClientRect();ctx.style.top=r.top+"px";ctx.style.left=r.right-100+"px";ctx.classList.remove("hidden");e.stopPropagation();}
+  else{const b=e.target.closest(".file-item");if(b)openFile(b.dataset.file);}
+});
+document.addEventListener("click",()=>ctx.classList.add("hidden"));
+document.getElementById("delete-btn").addEventListener("click",async()=>{ctx.classList.add("hidden");if(confirm(`Delete ${contextTarget.dataset.file}?`)){await fetch(`${backendURL}?action=deleteFile&path=${encodeURIComponent(contextTarget.dataset.file)}&project=${encodeURIComponent(projectName)}`);loadFileList();}});
+document.getElementById("rename-btn").addEventListener("click",()=>{ctx.classList.add("hidden");document.getElementById("rename-modal").classList.add("flex");document.getElementById("rename-modal").classList.remove("hidden");document.getElementById("rename-input").value=contextTarget.dataset.file;});
+document.getElementById("cancel-rename").addEventListener("click",()=>document.getElementById("rename-modal").classList.add("hidden"));
+document.getElementById("confirm-rename").addEventListener("click",async()=>{const newName=document.getElementById("rename-input").value.trim();if(!newName)return;await fetch(`${backendURL}?action=renameFile&oldPath=${encodeURIComponent(contextTarget.dataset.file)}&newPath=${encodeURIComponent(newName)}&project=${encodeURIComponent(projectName)}`);document.getElementById("rename-modal").classList.add("hidden");loadFileList();});
+
+// ----- New File Modal -----
+document.getElementById("new-file-btn").addEventListener("click",()=>{document.getElementById("newfile-modal").classList.remove("hidden");document.getElementById("newfile-modal").classList.add("flex");});
+document.getElementById("cancel-newfile").addEventListener("click",()=>document.getElementById("newfile-modal").classList.add("hidden"));
+document.getElementById("confirm-newfile").addEventListener("click",async()=>{const name=document.getElementById("newfile-input").value.trim();if(!name)return;await fetch(`${backendURL}?action=createFile&name=${encodeURIComponent(name)}&project=${encodeURIComponent(projectName)}`);document.getElementById("newfile-modal").classList.add("hidden");loadFileList();});
+
+loadFileList();
+</script>
+</body>
+</html>
